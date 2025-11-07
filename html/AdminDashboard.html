@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Anchors - Admin Dashboard</title>
+    <link rel="icon" type="image/jpeg" href="/images/icon.jpg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-anchor me-2"></i>
+                <span class="brand-text">Admin Dashboard</span>
+            </a>
+            <div class="d-flex">
+                <a href="MainBoard.html" class="btn btn-outline-light me-2">
+                    <i class="fas fa-home me-1"></i>Home
+                </a>
+                <button class="btn btn-outline-danger" id="adminLogoutBtn">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container py-5">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="text-light mb-4">
+                        <i class="fas fa-tachometer-alt me-3"></i>Admin Dashboard
+                    </h1>
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-tabs mb-4" style="border-color: var(--border-dark);">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="membersTab" data-bs-toggle="tab" href="#membersSection" role="tab">
+                                <i class="fas fa-users me-2"></i>Members
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="applicationsTab" data-bs-toggle="tab" href="#applicationsSection" role="tab">
+                                <i class="fas fa-file-alt me-2"></i>Applications
+                                <span class="badge bg-danger ms-2" id="pendingApplicationsBadge" style="display: none;">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="mediaTab" data-bs-toggle="tab" href="#mediaSection" role="tab">
+                                <i class="fas fa-images me-2"></i>Media
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Members Section -->
+                <div class="tab-pane fade show active" id="membersSection" role="tabpanel">
+
+                    <!-- Create Member Section -->
+                    <div class="row mb-5">
+                        <div class="col-lg-6">
+                            <div class="card-custom">
+                                <div class="card-header-custom">
+                                    <h3 class="mb-0">
+                                        <i class="fas fa-user-plus me-2"></i>Create Member Account
+                                    </h3>
+                                </div>
+                                <div class="card-body-custom">
+                                    <form id="createMemberForm">
+                                        <div class="mb-3">
+                                            <label for="memberUsername" class="form-label text-light">Username</label>
+                                            <input type="text" class="form-control form-control-dark" id="memberUsername" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="memberPassword" class="form-label text-light">Password</label>
+                                            <input type="password" class="form-control form-control-dark" id="memberPassword" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="memberEmail" class="form-label text-light">Email Address</label>
+                                            <input type="email" class="form-control form-control-dark" id="memberEmail" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary-custom w-100">
+                                            <i class="fas fa-plus-circle me-2"></i>Create Member
+                                        </button>
+                                    </form>
+                                    <div id="createMemberSuccess" class="alert alert-success d-none mt-3" role="alert"></div>
+                                    <div id="createMemberError" class="alert alert-danger d-none mt-3" role="alert"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Members Table Section -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card-custom">
+                                <div class="card-header-custom">
+                                    <h3 class="mb-0">
+                                        <i class="fas fa-users me-2"></i>All Members
+                                    </h3>
+                                </div>
+                                <div class="card-body-custom">
+                                    <div class="table-responsive">
+                                        <table class="table table-dark table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Username</th>
+                                                    <th>Email</th>
+                                                    <th>Display Name</th>
+                                                    <th>Date Created</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="membersTableBody">
+                                                <!-- Members will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="noMembersMessage" class="text-center text-muted py-4" style="display: none;">
+                                        <i class="fas fa-users fa-3x mb-3"></i>
+                                        <p>No members registered yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Applications Section -->
+                <div class="tab-pane fade" id="applicationsSection" role="tabpanel">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card-custom">
+                                <div class="card-header-custom">
+                                    <h3 class="mb-0">
+                                        <i class="fas fa-file-alt me-2"></i>Member Applications
+                                    </h3>
+                                </div>
+                                <div class="card-body-custom">
+                                    <div id="applicationsContainer">
+                                        <p class="text-muted text-center">Loading applications...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Media Section -->
+                <div class="tab-pane fade" id="mediaSection" role="tabpanel">
+                    <!-- Upload Media Section -->
+                    <div class="row mb-5">
+                        <div class="col-lg-6">
+                            <div class="card-custom">
+                                <div class="card-header-custom">
+                                    <h3 class="mb-0">
+                                        <i class="fas fa-upload me-2"></i>Upload Photos/Videos
+                                    </h3>
+                                </div>
+                                <div class="card-body-custom">
+                                    <form id="uploadMediaForm">
+                                        <div class="mb-3">
+                                            <label for="mediaTitle" class="form-label text-light">Title</label>
+                                            <input type="text" class="form-control form-control-dark" id="mediaTitle" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mediaDescription" class="form-label text-light">Description</label>
+                                            <textarea class="form-control form-control-dark" id="mediaDescription" rows="3"></textarea>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mediaFile" class="form-label text-light">Photo/Video File</label>
+                                            <input type="file" class="form-control form-control-dark" id="mediaFile" accept="image/*,video/*" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary-custom w-100">
+                                            <i class="fas fa-upload me-2"></i>Upload Media
+                                        </button>
+                                    </form>
+                                    <div id="uploadMediaSuccess" class="alert alert-success d-none mt-3" role="alert"></div>
+                                    <div id="uploadMediaError" class="alert alert-danger d-none mt-3" role="alert"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card-custom">
+                                <div class="card-header-custom">
+                                    <h3 class="mb-0">
+                                        <i class="fas fa-images me-2"></i>Recent Uploads
+                                    </h3>
+                                </div>
+                                <div class="card-body-custom">
+                                    <div id="mediaUploadsContainer">
+                                        <p class="text-muted text-center">No uploads yet.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-custom py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <p class="mb-0 text-light">
+                        <i class="fas fa-anchor me-2"></i>
+                        © Voice Anchors Community 2025
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- EmailJS - Gmail Service -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/forge-api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/email-service.js"></script>
+    <script src="/js/admin.js"></script>
+    <script src="/js/admin-applications.js"></script>
+</body>
+</html>
+
