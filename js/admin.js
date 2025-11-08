@@ -109,8 +109,14 @@ async function handleCreateMember(e) {
             throw error;
         }
         
-        // Send welcome email (simulated)
-        sendWelcomeEmail(newMember);
+        // Send welcome email via Resend
+        if (window.EmailService && window.EmailService.isConfigured()) {
+            await window.EmailService.sendWelcome(
+                newMember.email,
+                newMember.username,
+                newMember.password
+            );
+        }
         
         // Show success message
         if (successDiv) {
@@ -134,43 +140,7 @@ async function handleCreateMember(e) {
     }
 }
 
-function sendWelcomeEmail(member) {
-    // Simulate email sending
-    const emailContent = {
-        to: member.email,
-        from: 'voiceanchors@domain.com',
-        subject: 'Welcome to Voice Anchors Community',
-        body: `
-Dear ${member.username},
-
-Welcome to Voice Anchors Community!
-
-Your account has been created successfully. Here are your login credentials:
-
-Username: ${member.username}
-Password: ${member.password}
-
-Please keep these credentials safe and change your password after your first login.
-
-We're excited to have you as part of our community!
-
-Best regards,
-Voice Anchors Community
-        `
-    };
-    
-    // In a real application, this would send an actual email
-    // For now, we'll just log it to console
-    console.log('Welcome Email Sent:', emailContent);
-    
-    // Store email in localStorage for demonstration
-    const emails = JSON.parse(localStorage.getItem('sentEmails') || '[]');
-    emails.push({
-        ...emailContent,
-        sentAt: new Date().toISOString()
-    });
-    localStorage.setItem('sentEmails', JSON.stringify(emails));
-}
+// Welcome email is now sent via EmailService.sendWelcome() in handleCreateMember()
 
 async function loadMembers() {
     const tableBody = document.getElementById('membersTableBody');
@@ -346,7 +316,7 @@ async function loadMediaUploads() {
     
     try {
         const { data: uploads, error } = await window.ForgeAPI.DB.select('media_uploads', {
-            order: 'upload_date.desc'
+            order: 'upload_date.desc,uploaded_at.desc'
         });
         
         if (error) {

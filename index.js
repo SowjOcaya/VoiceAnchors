@@ -93,6 +93,61 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ============================================
+// Resend Email API Endpoint
+// ============================================
+const { Resend } = require('resend');
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev'; // Change this to your verified domain
+
+const resend = new Resend(RESEND_API_KEY);
+
+// Email sending endpoint
+app.post('/api/send-email', async (req, res) => {
+  try {
+    const { to, subject, html, text, type } = req.body;
+
+    // Validate required fields
+    if (!to || !subject) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Missing required fields: to, subject' 
+      });
+    }
+
+    // Send email via Resend
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: Array.isArray(to) ? to : [to],
+      subject: subject,
+      html: html || text || '',
+      text: text || html || ''
+    });
+
+    if (error) {
+      console.error('Resend API error:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to send email' 
+      });
+    }
+
+    console.log(`✅ Email sent successfully to ${to} (${type || 'general'})`);
+    res.json({ 
+      success: true, 
+      id: data?.id,
+      message: 'Email sent successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Internal server error' 
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);

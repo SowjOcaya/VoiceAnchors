@@ -24,7 +24,7 @@ async function loadActivities() {
     
     try {
         const { data: uploads, error } = await window.ForgeAPI.DB.select('media_uploads', {
-            order: 'upload_date.desc'
+            order: 'upload_date.desc,uploaded_at.desc'
         });
         
         if (error) {

@@ -17,6 +17,11 @@ services:
         sync: false  # Set this manually in Render dashboard
       - key: SUPABASE_ANON_KEY
         sync: false  # Set this manually in Render dashboard
+      # Resend Email Configuration
+      - key: RESEND_API_KEY
+        value: re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd
+      - key: FROM_EMAIL
+        value: onboarding@resend.dev  # Change to your verified domain email
 
 
 
