@@ -96,11 +96,24 @@ app.get('/health', (req, res) => {
 // ============================================
 // Resend Email API Endpoint
 // ============================================
-const { Resend } = require('resend');
+// Lazy load Resend to avoid React Email dependencies if not needed
+let Resend, resend;
 const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'voiceanchors@resend.com'; // Change this to your verified domain
 
-const resend = new Resend(RESEND_API_KEY);
+// Initialize Resend only when needed
+function getResend() {
+    if (!resend) {
+        try {
+            Resend = require('resend');
+            resend = new Resend(RESEND_API_KEY);
+        } catch (error) {
+            console.error('Failed to initialize Resend:', error);
+            return null;
+        }
+    }
+    return resend;
+}
 
 // Email sending endpoint
 app.post('/api/send-email', async (req, res) => {
@@ -115,8 +128,17 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
+    // Get Resend instance
+    const resendInstance = getResend();
+    if (!resendInstance) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Email service not available' 
+      });
+    }
+
     // Send email via Resend
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await resendInstance.emails.send({
       from: FROM_EMAIL,
       to: Array.isArray(to) ? to : [to],
       subject: subject,
