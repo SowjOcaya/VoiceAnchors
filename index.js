@@ -1,5 +1,9 @@
+// Load environment variables from .env file (for local development)
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -25,12 +29,59 @@ app.use('/css', express.static(path.join(__dirname, 'css')));
 app.use('/js', express.static(path.join(__dirname, 'js')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Serve HTML files
+// Supabase configuration from environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+// Function to inject Supabase config into HTML
+function injectSupabaseConfig(htmlContent) {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        return htmlContent;
+    }
+    
+    const supabaseScript = `
+    <!-- Supabase Configuration -->
+    <script>
+        window.SUPABASE_URL = '${SUPABASE_URL}';
+        window.SUPABASE_ANON_KEY = '${SUPABASE_ANON_KEY}';
+    </script>`;
+    
+    // Replace forge-api.js with supabase-api.js and inject config
+    let modified = htmlContent
+        .replace(/<script[^>]*src=["']\/js\/forge-api\.js["'][^>]*><\/script>/gi, 
+            supabaseScript + '\n    <script src="/js/supabase-api.js"></script>')
+        .replace(/<script[^>]*src=["']js\/forge-api\.js["'][^>]*><\/script>/gi, 
+            supabaseScript + '\n    <script src="/js/supabase-api.js"></script>');
+    
+    return modified;
+}
+
+// Serve HTML files with Supabase config injection
+app.get('*.html', (req, res) => {
+    const filePath = path.join(__dirname, 'html', path.basename(req.path));
+    
+    if (fs.existsSync(filePath)) {
+        let htmlContent = fs.readFileSync(filePath, 'utf8');
+        htmlContent = injectSupabaseConfig(htmlContent);
+        res.send(htmlContent);
+    } else {
+        res.status(404).send('File not found');
+    }
+});
+
+// Serve other static files
 app.use(express.static(path.join(__dirname, 'html')));
 
-// Default route - serve MainBoard.html
+// Default route - serve MainBoard.html with Supabase config
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'html', 'MainBoard.html'));
+  const filePath = path.join(__dirname, 'html', 'MainBoard.html');
+  if (fs.existsSync(filePath)) {
+    let htmlContent = fs.readFileSync(filePath, 'utf8');
+    htmlContent = injectSupabaseConfig(htmlContent);
+    res.send(htmlContent);
+  } else {
+    res.status(404).send('MainBoard.html not found');
+  }
 });
 
 // Health check route

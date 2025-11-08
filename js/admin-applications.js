@@ -247,3 +247,5 @@ async function rejectApplication(applicationId, email) {
 window.approveApplication = approveApplication;
 window.rejectApplication = rejectApplication;
 
+
+

@@ -11,7 +11,12 @@ services:
         value: production
       - key: PORT
         value: 3000
-    # Optional: If you need to change Forge URL, uncomment and set:
-    # - key: FORGE_BASE_URL
-    #   value: https://zcmr4dam.us-east.insforge.app
+      # Supabase Configuration - Replace with your actual values
+      # Get these from: https://supabase.com/dashboard/project/_/settings/api
+      - key: SUPABASE_URL
+        sync: false  # Set this manually in Render dashboard
+      - key: SUPABASE_ANON_KEY
+        sync: false  # Set this manually in Render dashboard
+
+
 

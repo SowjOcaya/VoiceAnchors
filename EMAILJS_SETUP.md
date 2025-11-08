@@ -90,3 +90,5 @@ After configuring:
 - Emails are sent in real-time when actions occur
 - Check browser console for email sending logs
 
+
+

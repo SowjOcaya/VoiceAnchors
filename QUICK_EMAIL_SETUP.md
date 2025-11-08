@@ -57,3 +57,5 @@ After adding the Template ID:
 2. Check browser console - should show "✅ Email sent successfully"
 3. Check your Gmail sent folder to verify emails are being sent
 
+
+

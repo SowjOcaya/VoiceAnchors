@@ -102,3 +102,5 @@ async function sendApplicationConfirmationEmail(email) {
 
 For development, emails are logged to the console. Check browser console to see email content.
 
+
+
