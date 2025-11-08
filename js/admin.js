@@ -280,7 +280,7 @@ async function handleUploadMedia(e) {
             description: description || '',
             media_url: uploadData.url,
             media_type: isVideo ? 'video' : 'photo',
-            file_name: mediaFile.name, // Add file_name for compatibility
+            file_name: mediaFile.name || fileName || 'unnamed-file', // Ensure file_name is always provided
             file_size: mediaFile.size || null
         };
         

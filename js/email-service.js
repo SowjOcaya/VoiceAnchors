@@ -4,7 +4,7 @@
 const EMAIL_CONFIG = {
     apiEndpoint: '/api/send-email',
     fromName: 'Voice Anchors',
-    fromEmail: 'onboarding@resend.dev' // This will be set by server
+    fromEmail: 'voiceanchors@resend.com' // This will be set by server
 };
 
 // Check if email service is available

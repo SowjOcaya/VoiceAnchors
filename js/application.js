@@ -9,39 +9,31 @@ function waitForForgeAPI(callback) {
     }
 }
 
-let applicationData = {
-    email: '',
-    tiktokUsername: ''
-};
-
 document.addEventListener('DOMContentLoaded', function() {
     waitForForgeAPI(() => {
-        // Setup initial application form
+        // Setup application form
         const applicationForm = document.getElementById('applicationForm');
         if (applicationForm) {
-            applicationForm.addEventListener('submit', handleInitialApplication);
-        }
-        
-        // Setup application details form
-        const applicationDetailsForm = document.getElementById('applicationDetailsForm');
-        if (applicationDetailsForm) {
-            applicationDetailsForm.addEventListener('submit', handleApplicationSubmission);
+            applicationForm.addEventListener('submit', handleApplicationSubmission);
         }
     });
 });
 
-function handleInitialApplication(e) {
+async function handleApplicationSubmission(e) {
     e.preventDefault();
     
     const email = document.getElementById('applicantEmail').value.trim();
     const tiktokUsername = document.getElementById('tiktokUsername').value.trim();
     const errorDiv = document.getElementById('applicationError');
+    const successDiv = document.getElementById('applicationSuccess');
+    const submitBtn = document.getElementById('submitApplicationBtn');
     
     // Validate inputs
     if (!email || !tiktokUsername) {
         if (errorDiv) {
             errorDiv.textContent = 'Please fill in all fields';
             errorDiv.classList.remove('d-none');
+            if (successDiv) successDiv.classList.add('d-none');
         }
         return;
     }
@@ -52,86 +44,13 @@ function handleInitialApplication(e) {
         if (errorDiv) {
             errorDiv.textContent = 'Please enter a valid email address';
             errorDiv.classList.remove('d-none');
+            if (successDiv) successDiv.classList.add('d-none');
         }
         return;
     }
     
-    // Store application data
-    applicationData.email = email;
-    applicationData.tiktokUsername = tiktokUsername;
-    
-    // Hide error
-    if (errorDiv) {
-        errorDiv.classList.add('d-none');
-    }
-    
-    // Show application details modal
-    const modalElement = document.getElementById('applicationDetailsModal');
-    if (modalElement) {
-        // Remove any existing modal instances
-        const existingModal = bootstrap.Modal.getInstance(modalElement);
-        if (existingModal) {
-            existingModal.dispose();
-        }
-        
-        // Create and show new modal
-        const modal = new bootstrap.Modal(modalElement, {
-            backdrop: true,
-            keyboard: true,
-            focus: true
-        });
-        
-        // Ensure modal is fully initialized before showing
-        setTimeout(() => {
-            modal.show();
-            
-            // Focus on first input after modal is shown
-            modalElement.addEventListener('shown.bs.modal', function() {
-                const firstInput = modalElement.querySelector('#applicationReason');
-                const selectInput = modalElement.querySelector('#impersonationChoice');
-                
-                // Enable select dropdown
-                if (selectInput) {
-                    selectInput.disabled = false;
-                    selectInput.style.pointerEvents = 'auto';
-                }
-                
-                if (firstInput) {
-                    setTimeout(() => firstInput.focus(), 100);
-                }
-            }, { once: true });
-        }, 100);
-    }
-}
-
-async function handleApplicationSubmission(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const form = e.target;
-    const reason = document.getElementById('applicationReason').value.trim();
-    const impersonationChoice = document.getElementById('impersonationChoice').value;
-    const errorDiv = document.getElementById('applicationDetailsError');
-    const submitBtn = document.getElementById('submitApplicationBtn');
-    
-    // Validate form
-    if (!form.checkValidity()) {
-        form.classList.add('was-validated');
-        if (errorDiv) {
-            errorDiv.textContent = 'Please fill in all required fields';
-            errorDiv.classList.remove('d-none');
-        }
-        return;
-    }
-    
-    // Validate inputs
-    if (!reason || !impersonationChoice) {
-        if (errorDiv) {
-            errorDiv.textContent = 'Please fill in all fields';
-            errorDiv.classList.remove('d-none');
-        }
-        return;
-    }
+    // Clean TikTok username (remove @ if present)
+    const cleanTiktokUsername = tiktokUsername.replace(/^@+/, '');
     
     // Disable submit button to prevent double submission
     if (submitBtn) {
@@ -139,14 +58,15 @@ async function handleApplicationSubmission(e) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
     }
     
+    // Hide previous messages
+    if (errorDiv) errorDiv.classList.add('d-none');
+    if (successDiv) successDiv.classList.add('d-none');
+    
     try {
         // Create application in database
-        // Note: application_number will be auto-generated by database trigger
         const application = {
-            email: applicationData.email,
-            tiktok_username: applicationData.tiktokUsername,
-            reason: reason,
-            impersonation_choice: impersonationChoice,
+            email: email,
+            tiktok_username: cleanTiktokUsername,
             status: 'pending'
         };
         
@@ -157,39 +77,37 @@ async function handleApplicationSubmission(e) {
         }
         
         // Send confirmation email
-        await sendApplicationConfirmationEmail(applicationData.email);
+        await sendApplicationConfirmationEmail(email);
         
-        // Hide error
-        if (errorDiv) {
-            errorDiv.classList.add('d-none');
+        // Show success message
+        if (successDiv) {
+            successDiv.textContent = 'Application submitted successfully! Please check your email for updates.';
+            successDiv.classList.remove('d-none');
+            if (errorDiv) errorDiv.classList.add('d-none');
         }
         
-        // Close details modal
-        const detailsModal = bootstrap.Modal.getInstance(document.getElementById('applicationDetailsModal'));
-        if (detailsModal) {
-            detailsModal.hide();
-        }
+        // Reset form
+        document.getElementById('applicationForm').reset();
         
         // Show success modal
-        const successModal = new bootstrap.Modal(document.getElementById('applicationSuccessModal'));
-        successModal.show();
-        
-        // Reset forms
-        document.getElementById('applicationForm').reset();
-        document.getElementById('applicationDetailsForm').reset();
-        document.getElementById('applicationDetailsForm').classList.remove('was-validated');
-        applicationData = { email: '', tiktokUsername: '' };
+        const successModalElement = document.getElementById('applicationSuccessModal');
+        if (successModalElement) {
+            const successModal = new bootstrap.Modal(successModalElement);
+            successModal.show();
+        }
         
     } catch (error) {
         console.error('Error submitting application:', error);
         if (errorDiv) {
             errorDiv.textContent = error.message || 'Error submitting application. Please try again.';
             errorDiv.classList.remove('d-none');
+            if (successDiv) successDiv.classList.add('d-none');
         }
+    } finally {
         // Re-enable submit button
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Submit Application';
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Application';
         }
     }
 }
