@@ -97,7 +97,7 @@ app.get('/health', (req, res) => {
 // Resend Email API Endpoint
 // ============================================
 const { Resend } = require('resend');
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev'; // Change this to your verified domain
 
 const resend = new Resend(RESEND_API_KEY);

@@ -82,34 +82,36 @@
                     </div>
                     
                     <!-- Application Details Modal -->
-                    <div class="modal fade" id="applicationDetailsModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content" style="background-color: var(--card-bg); border: 1px solid var(--border-dark);">
+                    <div class="modal fade" id="applicationDetailsModal" tabindex="-1" aria-labelledby="applicationDetailsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                            <div class="modal-content" style="background-color: var(--card-bg); border: 1px solid var(--border-dark); z-index: 1055;">
                                 <div class="modal-header" style="border-bottom: 1px solid var(--border-dark);">
-                                    <h5 class="modal-title text-light">
+                                    <h5 class="modal-title text-light" id="applicationDetailsModalLabel">
                                         <i class="fas fa-file-alt me-2"></i>Application Details
                                     </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <form id="applicationDetailsForm">
+                                    <form id="applicationDetailsForm" novalidate>
                                         <div class="mb-4">
-                                            <label class="form-label text-light">Why do you want to join Voice Anchors?</label>
-                                            <textarea class="form-control form-control-dark" id="applicationReason" rows="4" required></textarea>
+                                            <label for="applicationReason" class="form-label text-light">Why do you want to join Voice Anchors?</label>
+                                            <textarea class="form-control form-control-dark" id="applicationReason" name="applicationReason" rows="4" required></textarea>
+                                            <div class="invalid-feedback">Please provide a reason.</div>
                                         </div>
                                         <div class="mb-3">
                                             <p class="text-light mb-2">You can't join if you can't change your TikTok name to <span style="font-family: 'Courier New', monospace; font-weight: bold;">⎀ USERNAME</span></p>
                                         </div>
                                         <div class="mb-4">
-                                            <label class="form-label text-light">What do you want to impersonate?</label>
-                                            <select class="form-select form-control-dark" id="impersonationChoice" required>
+                                            <label for="impersonationChoice" class="form-label text-light">What do you want to impersonate?</label>
+                                            <select class="form-select form-control-dark" id="impersonationChoice" name="impersonationChoice" required style="pointer-events: auto; cursor: pointer;">
                                                 <option value="">Select an option</option>
                                                 <option value="Politician or Celebrity">Politician or Celebrity</option>
                                                 <option value="Celebrity">Celebrity</option>
                                                 <option value="Politician">Politician</option>
                                             </select>
+                                            <div class="invalid-feedback">Please select an option.</div>
                                         </div>
-                                        <button type="submit" class="btn btn-primary-custom w-100">
+                                        <button type="submit" class="btn btn-primary-custom w-100" id="submitApplicationBtn">
                                             <i class="fas fa-check me-2"></i>Submit Application
                                         </button>
                                     </form>

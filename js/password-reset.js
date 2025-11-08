@@ -98,7 +98,6 @@ async function handleForgotPassword(e) {
         // Create password reset record
         const resetRecord = {
             member_id: member.id,
-            email: email,
             token: token,
             expires_at: expiresAt.toISOString(),
             used: false

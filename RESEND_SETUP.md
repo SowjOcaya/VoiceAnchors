@@ -7,7 +7,7 @@ Your email system has been successfully migrated from EmailJS to **Resend.dev**!
 ## 🔑 Your API Key
 
 Your Resend API key is already configured:
-- **API Key**: `re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd`
+- **API Key**: `re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e`
 
 ## 📧 Email Features
 
@@ -30,7 +30,7 @@ The following emails are now powered by Resend:
 
 2. **Create `.env` file** (if you don't have one):
    ```env
-   RESEND_API_KEY=re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd
+   RESEND_API_KEY=re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e
    FROM_EMAIL=onboarding@resend.dev
    ```
 
@@ -42,13 +42,13 @@ The following emails are now powered by Resend:
 ### For Render Deployment:
 
 1. **Environment Variables** are already set in `render.yaml`:
-   - `RESEND_API_KEY` = `re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd`
+   - `RESEND_API_KEY` = `re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e`
    - `FROM_EMAIL` = `onboarding@resend.dev`
 
 2. **Or set manually in Render Dashboard:**
    - Go to your web service → **Environment** tab
    - Add:
-     - `RESEND_API_KEY` = `re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd`
+     - `RESEND_API_KEY` = `re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e`
      - `FROM_EMAIL` = `onboarding@resend.dev` (or your verified domain)
 
 3. **Deploy:**

@@ -279,7 +279,9 @@ async function handleUploadMedia(e) {
             title: title,
             description: description || '',
             media_url: uploadData.url,
-            media_type: isVideo ? 'video' : 'photo'
+            media_type: isVideo ? 'video' : 'photo',
+            file_name: mediaFile.name, // Add file_name for compatibility
+            file_size: mediaFile.size || null
         };
         
         const { data: createdMedia, error: dbError } = await window.ForgeAPI.DB.insert('media_uploads', mediaData);

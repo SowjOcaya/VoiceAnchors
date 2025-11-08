@@ -88,20 +88,41 @@ function handleInitialApplication(e) {
             // Focus on first input after modal is shown
             modalElement.addEventListener('shown.bs.modal', function() {
                 const firstInput = modalElement.querySelector('#applicationReason');
+                const selectInput = modalElement.querySelector('#impersonationChoice');
+                
+                // Enable select dropdown
+                if (selectInput) {
+                    selectInput.disabled = false;
+                    selectInput.style.pointerEvents = 'auto';
+                }
+                
                 if (firstInput) {
                     setTimeout(() => firstInput.focus(), 100);
                 }
             }, { once: true });
-        }, 50);
+        }, 100);
     }
 }
 
 async function handleApplicationSubmission(e) {
     e.preventDefault();
+    e.stopPropagation();
     
+    const form = e.target;
     const reason = document.getElementById('applicationReason').value.trim();
     const impersonationChoice = document.getElementById('impersonationChoice').value;
     const errorDiv = document.getElementById('applicationDetailsError');
+    const submitBtn = document.getElementById('submitApplicationBtn');
+    
+    // Validate form
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        if (errorDiv) {
+            errorDiv.textContent = 'Please fill in all required fields';
+            errorDiv.classList.remove('d-none');
+        }
+        return;
+    }
     
     // Validate inputs
     if (!reason || !impersonationChoice) {
@@ -110,6 +131,12 @@ async function handleApplicationSubmission(e) {
             errorDiv.classList.remove('d-none');
         }
         return;
+    }
+    
+    // Disable submit button to prevent double submission
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
     }
     
     try {
@@ -150,6 +177,7 @@ async function handleApplicationSubmission(e) {
         // Reset forms
         document.getElementById('applicationForm').reset();
         document.getElementById('applicationDetailsForm').reset();
+        document.getElementById('applicationDetailsForm').classList.remove('was-validated');
         applicationData = { email: '', tiktokUsername: '' };
         
     } catch (error) {
@@ -157,6 +185,11 @@ async function handleApplicationSubmission(e) {
         if (errorDiv) {
             errorDiv.textContent = error.message || 'Error submitting application. Please try again.';
             errorDiv.classList.remove('d-none');
+        }
+        // Re-enable submit button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Submit Application';
         }
     }
 }

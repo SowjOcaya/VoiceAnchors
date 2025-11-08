@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
     waitForForgeAPI(() => {
         loadActivities();
         
-        // Refresh activities every 30 seconds for real-time updates
-        setInterval(loadActivities, 30000);
+        // Refresh activities every 10 seconds for real-time updates
+        setInterval(loadActivities, 10000);
     });
 });
 

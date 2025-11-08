@@ -19,7 +19,7 @@ services:
         sync: false  # Set this manually in Render dashboard
       # Resend Email Configuration
       - key: RESEND_API_KEY
-        value: re_Gee9WFBw_PNUxLnbCi4o5p7hu4TLox9cd
+        value: re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e
       - key: FROM_EMAIL
         value: onboarding@resend.dev  # Change to your verified domain email
 
