@@ -21,7 +21,8 @@ services:
       - key: RESEND_API_KEY
         value: re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e
       - key: FROM_EMAIL
-        value: onboarding@resend.dev  # Change to your verified domain email
+        value: voice.anchors.com  # Change to your verified domain email
+
 
 
 
