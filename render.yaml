@@ -21,8 +21,9 @@ services:
       - key: RESEND_API_KEY
         value: re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e
       - key: FROM_EMAIL
-        value: noreply@voice.result.com # Update after domain verification is complete
+        value: noreply@result.voiceacnhors.com # Update after domain verification is complete
         # For testing while domain is pending, use: onboarding@resend.dev
+        # Note: Domain is currently PENDING verification in Resend
 
 
 
