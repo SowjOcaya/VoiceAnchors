@@ -75,12 +75,28 @@ async function loadMembers() {
         // If no members with profiles, show all members
         const membersToDisplay = membersToShow.length > 0 ? membersToShow : members;
         
-        // Display members in a grid
+        // Helper function to escape HTML
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+        
+        // Display members in a grid with proper spacing
         container.innerHTML = `
-            <div class="row" id="membersGrid">
+            <div class="row" id="membersGrid" style="margin: 0 -15px;">
                 ${membersToDisplay.map(member => {
-                    const displayName = member.display_name || member.username || 'Member';
-                    const bio = member.bio || 'No bio available.';
+                    // Ensure display name is properly extracted - handle partial names
+                    let displayName = member.display_name || member.username || 'Member';
+                    // If display_name is very short (like "Ro"), use username if available
+                    if (displayName.length <= 2 && member.username && member.username.length > 2) {
+                        displayName = member.username;
+                    }
+                    
+                    // Handle bio - show proper message if empty
+                    const bio = member.bio && member.bio.trim() ? member.bio.trim() : 'No bio available.';
+                    
                     const tiktokUsername = member.tiktok_username || '';
                     const tiktokLink = member.tiktok_link || '';
                     const tiktokUrl = tiktokLink 
@@ -95,20 +111,28 @@ async function loadMembers() {
                         })
                         : 'N/A';
                     
+                    // Escape all user-provided content
+                    const safeDisplayName = escapeHtml(displayName);
+                    const safeUsername = escapeHtml(member.username || 'username');
+                    const safeBio = escapeHtml(bio);
+                    const safeProfilePicture = escapeHtml(profilePicture);
+                    const safeJoinDate = escapeHtml(joinDate);
+                    const safeTiktokUrl = escapeHtml(tiktokUrl);
+                    
                     return `
-                        <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card-custom h-100">
+                        <div class="col-lg-4 col-md-6 mb-4" style="padding: 0 15px;">
+                            <div class="card-custom h-100" style="margin-bottom: 20px; padding: 20px;">
                                 <div class="card-body-custom text-center">
-                                    <img src="${profilePicture}" 
-                                         alt="${displayName}" 
+                                    <img src="${safeProfilePicture}" 
+                                         alt="${safeDisplayName}" 
                                          class="rounded-circle mb-3" 
                                          style="width: 150px; height: 150px; object-fit: cover; border: 3px solid var(--border-dark);"
                                          onerror="this.src='https://via.placeholder.com/200?text=No+Photo'">
-                                    <h4 class="text-light mb-2">${displayName}</h4>
-                                    <p class="text-muted mb-3">@${member.username || 'username'}</p>
-                                    <p class="text-light mb-3" style="min-height: 60px;">${bio}</p>
+                                    <h4 class="text-light mb-2">${safeDisplayName}</h4>
+                                    <p class="text-muted mb-3">@${safeUsername}</p>
+                                    <p class="text-light mb-3" style="min-height: 60px; word-wrap: break-word;">${safeBio}</p>
                                     ${tiktokUrl ? `
-                                        <a href="${tiktokUrl}" 
+                                        <a href="${safeTiktokUrl}" 
                                            target="_blank" 
                                            rel="noopener noreferrer"
                                            class="btn btn-outline-primary btn-sm mb-2">
@@ -116,7 +140,7 @@ async function loadMembers() {
                                         </a>
                                     ` : ''}
                                     <p class="text-muted small mb-0">
-                                        <i class="fas fa-calendar me-1"></i>Joined ${joinDate}
+                                        <i class="fas fa-calendar me-1"></i>Joined ${safeJoinDate}
                                     </p>
                                 </div>
                             </div>

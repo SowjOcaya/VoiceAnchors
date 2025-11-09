@@ -271,15 +271,26 @@ async function handleUploadMedia(e) {
         );
         
         if (uploadError) {
-            throw uploadError;
+            console.error('Storage upload error:', uploadError);
+            throw new Error(uploadError.message || 'Failed to upload file to storage');
         }
         
+        // Validate that upload was successful and URL is available
+        if (!uploadData || !uploadData.url) {
+            throw new Error('File upload succeeded but no URL was returned. Please try again.');
+        }
+        
+        const fileUrl = uploadData.url;
+        
         // Create media upload record in database
+        // Include both file_url (for old schema) and media_url (for new schema) for compatibility
         const mediaData = {
             title: title,
             description: description || '',
-            media_url: uploadData.url,
+            media_url: fileUrl,
+            file_url: fileUrl, // Also set file_url for database compatibility
             media_type: isVideo ? 'video' : 'photo',
+            file_type: isVideo ? 'video' : 'image', // Also set file_type for compatibility
             file_name: mediaFile.name || fileName || 'unnamed-file', // Ensure file_name is always provided
             file_size: mediaFile.size || null
         };
@@ -287,7 +298,8 @@ async function handleUploadMedia(e) {
         const { data: createdMedia, error: dbError } = await window.ForgeAPI.DB.insert('media_uploads', mediaData);
         
         if (dbError) {
-            throw dbError;
+            console.error('Database insert error:', dbError);
+            throw new Error(dbError.message || 'Failed to save media record to database');
         }
         
         // Show success message

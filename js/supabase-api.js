@@ -201,33 +201,65 @@ const supabaseStorage = {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'apikey': SUPABASE_ANON_KEY,
-                        'Content-Type': file.type || 'application/octet-stream'
+                        'Content-Type': file.type || 'application/octet-stream',
+                        'x-upsert': 'true' // Allow overwriting existing files
                     },
                     body: file
                 }
             );
             
+            // Read response text once (can only be read once)
+            const responseText = await response.text().catch(() => '');
+            
             if (!response.ok) {
-                const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-                throw new Error(error.message || error.error || 'Upload failed');
+                let errorMessage = 'Upload failed';
+                try {
+                    if (responseText) {
+                        const errorData = JSON.parse(responseText);
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } else {
+                        errorMessage = `Upload failed with status ${response.status}`;
+                    }
+                } catch (e) {
+                    // If response is not JSON, use text or default message
+                    errorMessage = responseText || `Upload failed with status ${response.status}`;
+                }
+                throw new Error(errorMessage);
             }
             
-            const result = await response.json();
+            // Try to parse response as JSON, but handle empty responses
+            let result = {};
+            try {
+                if (responseText) {
+                    result = JSON.parse(responseText);
+                }
+            } catch (e) {
+                // Response might be empty, which is fine for Supabase Storage
+                console.log('Storage upload response was empty or not JSON, continuing...');
+            }
             
             // Get public URL - Supabase returns the path, construct full URL
             const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodeURIComponent(fileName)}`;
+            
+            // Verify the URL is valid
+            if (!publicUrl || !publicUrl.includes('http')) {
+                throw new Error('Failed to generate valid public URL for uploaded file');
+            }
             
             return {
                 data: {
                     url: publicUrl,
                     key: fileName,
-                    path: result.Key || fileName
+                    path: result.Key || result.path || fileName
                 },
                 error: null
             };
         } catch (error) {
             console.error('Storage upload error:', error);
-            return { data: null, error };
+            return { 
+                data: null, 
+                error: error instanceof Error ? error : new Error(String(error))
+            };
         }
     },
     

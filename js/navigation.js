@@ -79,6 +79,7 @@ function updateNavigationAuth() {
     const memberLoginLink = document.getElementById('memberLoginLink');
     const adminLoginLink = document.getElementById('adminLoginLink');
     const adminDashboardLink = document.getElementById('adminDashboardLink');
+    const memberDashboardLink = document.getElementById('memberDashboardLink');
     
     // Find or create admin dashboard link in navigation
     let adminLink = adminDashboardLink;
@@ -111,6 +112,34 @@ function updateNavigationAuth() {
         }
     }
     
+    // Find or create member dashboard link in navigation
+    let memberLink = memberDashboardLink;
+    if (!memberLink && currentUser && !isAdmin) {
+        const navList = document.querySelector('.navbar-nav');
+        if (navList) {
+            const existingMemberLink = navList.querySelector('a[href="MemberDashboard.html"]');
+            if (!existingMemberLink) {
+                const listItem = document.createElement('li');
+                listItem.className = 'nav-item';
+                listItem.innerHTML = `
+                    <a class="nav-link" href="MemberDashboard.html" id="memberDashboardLink">
+                        <i class="fas fa-user-circle me-1"></i>My Dashboard
+                    </a>
+                `;
+                // Insert before the Account dropdown
+                const accountItem = navList.querySelector('.dropdown');
+                if (accountItem) {
+                    navList.insertBefore(listItem, accountItem);
+                } else {
+                    navList.appendChild(listItem);
+                }
+                memberLink = document.getElementById('memberDashboardLink');
+            } else {
+                memberLink = existingMemberLink;
+            }
+        }
+    }
+    
     if (currentUser) {
         if (logoutLink) logoutLink.style.display = 'block';
         if (memberLoginLink) memberLoginLink.style.display = 'none';
@@ -119,14 +148,23 @@ function updateNavigationAuth() {
         // Show admin dashboard link if admin is logged in
         if (isAdmin && adminLink) {
             adminLink.style.display = 'block';
+            if (memberLink) memberLink.style.display = 'none';
         } else if (adminLink) {
             adminLink.style.display = 'none';
+        }
+        
+        // Show member dashboard link if member is logged in (not admin)
+        if (!isAdmin && memberLink) {
+            memberLink.style.display = 'block';
+        } else if (memberLink) {
+            memberLink.style.display = 'none';
         }
     } else {
         if (logoutLink) logoutLink.style.display = 'none';
         if (memberLoginLink) memberLoginLink.style.display = 'block';
         if (adminLoginLink) adminLoginLink.style.display = 'block';
         if (adminLink) adminLink.style.display = 'none';
+        if (memberLink) memberLink.style.display = 'none';
     }
 }
 
