@@ -37,13 +37,24 @@ async function sendEmail(to, subject, html, text, type = 'general') {
         const result = await response.json();
 
         if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Failed to send email');
+            const errorMsg = result.error || 'Failed to send email';
+            console.error('❌ Email API error:', errorMsg);
+            console.error('   Response:', result);
+            throw new Error(errorMsg);
         }
 
+        console.log('✅ Email sent successfully:', result);
         return result;
     } catch (error) {
         console.error('❌ Error sending email:', error);
-        return { success: false, error: error.message };
+        // If it's a network error, provide helpful message
+        if (error.message.includes('fetch') || error.message.includes('Network')) {
+            return { 
+                success: false, 
+                error: 'Network error: Could not reach email server. Please check your connection and try again.' 
+            };
+        }
+        return { success: false, error: error.message || 'Failed to send email' };
     }
 }
 
