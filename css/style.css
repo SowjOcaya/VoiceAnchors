@@ -361,14 +361,58 @@ body::after {
 
 /* Content Placeholder */
 .content-placeholder {
+    background-color: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    min-height: 400px;
+    width: 100%;
+}
+
+/* Content Placeholder when showing loading/empty state */
+.content-placeholder:has(.text-center:only-child) {
     background-color: var(--card-bg);
     border: 1px solid var(--border-dark);
     border-radius: 10px;
     padding: 3rem;
-    min-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Members Grid Container */
+#membersGrid {
+    width: 100%;
+    margin: 0;
+}
+
+#membersGrid > [class*="col-"] {
+    display: flex;
+}
+
+#membersGrid .card-custom {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#membersGrid .card-body-custom {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure bio text displays properly - not vertically */
+#membersGrid .card-body-custom > p.text-light {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    line-height: 1.6 !important;
 }
 
 /* History Section */

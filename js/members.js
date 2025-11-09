@@ -34,9 +34,16 @@ async function loadMembers() {
     if (!container) return;
     
     try {
-        // Show loading state
+        // Show loading state - restore container styling for loading state
         const currentContent = container.innerHTML;
         if (!currentContent.includes('membersGrid')) {
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            container.style.background = 'var(--card-bg)';
+            container.style.border = '1px solid var(--border-dark)';
+            container.style.borderRadius = '10px';
+            container.style.padding = '3rem';
             container.innerHTML = `
                 <div class="text-center py-5">
                     <i class="fas fa-spinner fa-spin fa-3x text-muted mb-4"></i>
@@ -57,6 +64,14 @@ async function loadMembers() {
         console.log('Loaded members:', members?.length || 0, 'members');
         
         if (!members || members.length === 0) {
+            // Restore container styling for empty state
+            container.style.display = 'flex';
+            container.style.alignItems = 'center';
+            container.style.justifyContent = 'center';
+            container.style.background = 'var(--card-bg)';
+            container.style.border = '1px solid var(--border-dark)';
+            container.style.borderRadius = '10px';
+            container.style.padding = '3rem';
             container.innerHTML = `
                 <div class="text-center py-5">
                     <i class="fas fa-user-friends fa-5x text-muted mb-4"></i>
@@ -83,9 +98,17 @@ async function loadMembers() {
             return div.innerHTML;
         };
         
+        // Remove flex constraints from container when displaying grid
+        container.style.display = 'block';
+        container.style.alignItems = 'unset';
+        container.style.justifyContent = 'unset';
+        container.style.background = 'transparent';
+        container.style.border = 'none';
+        container.style.padding = '0';
+        
         // Display members in a grid with proper spacing
         container.innerHTML = `
-            <div class="row" id="membersGrid" style="margin: 0 -15px;">
+            <div class="row g-4" id="membersGrid">
                 ${membersToDisplay.map(member => {
                     // Ensure display name is properly extracted - handle partial names
                     let displayName = member.display_name || member.username || 'Member';
@@ -120,8 +143,8 @@ async function loadMembers() {
                     const safeTiktokUrl = escapeHtml(tiktokUrl);
                     
                     return `
-                        <div class="col-lg-4 col-md-6 mb-4" style="padding: 0 15px;">
-                            <div class="card-custom h-100" style="margin-bottom: 20px; padding: 20px;">
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="card-custom h-100">
                                 <div class="card-body-custom text-center">
                                     <img src="${safeProfilePicture}" 
                                          alt="${safeDisplayName}" 
@@ -130,7 +153,7 @@ async function loadMembers() {
                                          onerror="this.src='https://via.placeholder.com/200?text=No+Photo'">
                                     <h4 class="text-light mb-2">${safeDisplayName}</h4>
                                     <p class="text-muted mb-3">@${safeUsername}</p>
-                                    <p class="text-light mb-3" style="min-height: 60px; word-wrap: break-word;">${safeBio}</p>
+                                    <p class="text-light mb-3" style="min-height: 60px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; text-align: left; display: block; width: 100%;">${safeBio}</p>
                                     ${tiktokUrl ? `
                                         <a href="${safeTiktokUrl}" 
                                            target="_blank" 
@@ -151,6 +174,14 @@ async function loadMembers() {
         `;
     } catch (error) {
         console.error('Error loading members:', error);
+        // Restore container styling for error state
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.background = 'var(--card-bg)';
+        container.style.border = '1px solid var(--border-dark)';
+        container.style.borderRadius = '10px';
+        container.style.padding = '3rem';
         container.innerHTML = `
             <div class="text-center py-5">
                 <i class="fas fa-exclamation-triangle fa-3x text-danger mb-4"></i>
