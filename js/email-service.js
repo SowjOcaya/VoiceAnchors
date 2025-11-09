@@ -1,10 +1,19 @@
-// Email Service - Using SendPulse
-// All emails are sent via server endpoint to keep API key secure
+// Email Service - Using SendPulse SMTP
+// All emails are sent via server endpoint to keep credentials secure
 
 const EMAIL_CONFIG = {
     apiEndpoint: '/api/send-email',
     fromName: 'Voice Anchors',
-    fromEmail: 'hello@voiceanchors.publicvm.com' // Verified SendPulse domain
+    fromEmail: 'hello@voiceanchors.publicvm.com', // Verified SendPulse domain
+    smtp: {
+        host: process.env.SMTP_HOST || 'smtp-pulse.net',
+        port: process.env.SMTP_PORT || 465,
+        secure: true,
+        auth: {
+            user: process.env.SMTP_USER, // SendPulse User ID
+            pass: process.env.SMTP_PASSWORD // SendPulse Secret
+        }
+    }
 };
 
 // Check if email service is available

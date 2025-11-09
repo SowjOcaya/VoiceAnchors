@@ -94,15 +94,21 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================
-// SendPulse Email API Endpoint
+// SendPulse Email SMTP Configuration
 // ============================================
-// Import SendPulse SMTP API
-const SendPulse = require('@sendpulse/smtp-api-v1');
+// Import nodemailer for SMTP email sending
+const nodemailer = require('nodemailer');
 
-let sendpulse;
-const SENDPULSE_API_ID = process.env.SENDPULSE_API_ID || '7fd6ce78ffb534da678d14085e795631';
-const SENDPULSE_API_SECRET = process.env.SENDPULSE_API_SECRET || 'ebc54ee9ce66598df879ae76de5067c1';
-const FROM_EMAIL = process.env.SENDPULSE_FROM_EMAIL;
+const SMTP_CONFIG = {
+  host: process.env.SMTP_HOST || 'smtp-pulse.net',
+  port: process.env.SMTP_PORT || 465,
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER || '7fd6ce78ffb534da678d14085e795631',
+    pass: process.env.SMTP_PASSWORD || 'ebc54ee9ce66598df879ae76de5067c1'
+  }
+};
+const FROM_EMAIL = process.env.SMTP_FROM_EMAIL;
 
 // Validate email configuration on startup
 if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
@@ -119,26 +125,18 @@ if (!FROM_EMAIL) {
     console.log(`✅ SENDPULSE_FROM_EMAIL is configured: ${FROM_EMAIL}`);
 }
 
-// Initialize SendPulse only when needed
-function getSendPulse() {
-    if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
-        console.error('❌ SendPulse API credentials are not set. Cannot initialize SendPulse.');
+// Create transporter for sending emails
+function createTransporter() {
+    try {
+        const transporter = nodemailer.createTransport(SMTP_CONFIG);
+        console.log('✅ SMTP transporter created successfully');
+        return transporter;
+    } catch (error) {
+        console.error('❌ Failed to create SMTP transporter:', error);
+        console.error('   Error details:', error.message);
+        console.error('   Stack:', error.stack);
         return null;
     }
-    
-    if (!sendpulse) {
-        try {
-            // Initialize SendPulse instance with API credentials
-            sendpulse = new SendPulse(SENDPULSE_API_ID, SENDPULSE_API_SECRET);
-            console.log('✅ SendPulse initialized successfully');
-        } catch (error) {
-            console.error('❌ Failed to initialize SendPulse:', error);
-            console.error('   Error details:', error.message);
-            console.error('   Stack:', error.stack);
-            return null;
-        }
-    }
-    return sendpulse;
 }
 
 // Email sending endpoint
@@ -172,13 +170,13 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
-    // Get SendPulse instance
-    const sendpulseInstance = getSendPulse();
-    if (!sendpulseInstance) {
-      console.error('❌ Failed to get SendPulse instance');
+    // Create SMTP transporter
+    const transporter = createTransporter();
+    if (!transporter) {
+      console.error('❌ Failed to create SMTP transporter');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service not available. Please check your SendPulse API configuration.' 
+        error: 'Email service not available. Please check your SMTP configuration.' 
       });
     }
 
@@ -200,28 +198,21 @@ app.post('/api/send-email', async (req, res) => {
     console.log(`   Subject: ${subject}`);
     console.log(`   Type: ${type || 'general'}`);
 
-    // Send email via SendPulse
-    const emailData = {
+    // Prepare email data
+    const mailOptions = {
       from: {
         name: 'Voice Anchors',
-        email: FROM_EMAIL
+        address: FROM_EMAIL
       },
-      to: recipients.map(email => ({ email })),
+      to: recipients.join(', '),
       subject: subject,
       html: html || text || '',
       text: text || html || ''
     };
 
     try {
-      const result = await new Promise((resolve, reject) => {
-        sendpulseInstance.smtp.emails.send(emailData, (data, error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(data);
-          }
-        });
-      });
+      // Send email via SMTP
+      const result = await transporter.sendMail(mailOptions);
 
       console.log('✅ SendPulse email sent successfully:', result);
     } catch (error) {
@@ -308,43 +299,35 @@ app.post('/api/test-email', async (req, res) => {
     `;
     const testText = 'This is a test email from Voice Anchors. If you received this email, your email configuration is working correctly!';
 
-    // Use the same email sending logic
-    const sendpulseInstance = getSendPulse();
-    if (!sendpulseInstance) {
+    // Create SMTP transporter
+    const transporter = createTransporter();
+    if (!transporter) {
       return res.status(500).json({
         success: false,
-        error: 'Email service is not available. Please check your SendPulse API configuration.'
+        error: 'Email service is not available. Please check your SMTP configuration.'
       });
     }
 
     if (!FROM_EMAIL) {
       return res.status(500).json({
         success: false,
-        error: 'SENDPULSE_FROM_EMAIL is not configured.'
+        error: 'SMTP_FROM_EMAIL is not configured.'
       });
     }
 
     try {
-      const emailData = {
+      const mailOptions = {
         from: {
           name: 'Voice Anchors',
-          email: FROM_EMAIL
+          address: FROM_EMAIL
         },
-        to: [{ email: to }],
+        to: to,
         subject: testSubject,
         html: testHtml,
         text: testText
       };
 
-      const result = await new Promise((resolve, reject) => {
-        sendpulseInstance.smtp.emails.send(emailData, (data, error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(data);
-          }
-        });
-      });
+      const result = await transporter.sendMail(mailOptions);
 
       res.json({
         success: true,
@@ -391,14 +374,18 @@ app.listen(PORT, () => {
   console.log(`📧 Email test endpoint: http://localhost:${PORT}/api/test-email`);
   
   // Log email configuration status
-  if (SENDPULSE_API_ID && SENDPULSE_API_SECRET && FROM_EMAIL) {
-    console.log(`✅ SendPulse email service is configured`);
+  const smtpUser = SMTP_CONFIG.auth.user;
+  const smtpPass = SMTP_CONFIG.auth.pass;
+  if (smtpUser && smtpPass && FROM_EMAIL) {
+    console.log(`✅ SMTP email service is configured`);
+    console.log(`   Host: ${SMTP_CONFIG.host}`);
+    console.log(`   Port: ${SMTP_CONFIG.port}`);
     console.log(`   FROM_EMAIL: ${FROM_EMAIL}`);
   } else {
-    console.log(`⚠️  SendPulse email service is NOT fully configured`);
-    if (!SENDPULSE_API_ID) console.log(`   ❌ SENDPULSE_API_ID is missing`);
-    if (!SENDPULSE_API_SECRET) console.log(`   ❌ SENDPULSE_API_SECRET is missing`);
-    if (!FROM_EMAIL) console.log(`   ❌ SENDPULSE_FROM_EMAIL is missing`);
+    console.log(`⚠️  SMTP email service is NOT fully configured`);
+    if (!smtpUser) console.log(`   ❌ SMTP_USER is missing`);
+    if (!smtpPass) console.log(`   ❌ SMTP_PASSWORD is missing`);
+    if (!FROM_EMAIL) console.log(`   ❌ SMTP_FROM_EMAIL is missing`);
   }
 });
 
