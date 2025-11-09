@@ -342,6 +342,7 @@ app.post('/api/test-email', async (req, res) => {
           }
           resolve(data);
         }, emailData);
+      });
 
       res.json({
         success: true,
