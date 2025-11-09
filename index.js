@@ -149,20 +149,20 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
-    // Validate email configuration (SMTP)
-    if (!SMTP_CONFIG.auth.user || !SMTP_CONFIG.auth.pass) {
-      console.error('❌ SMTP credentials (SMTP_USER/SMTP_PASSWORD) are not configured');
+    // Validate SendPulse configuration
+    if (!SENDPULSE_CONFIG.userId || !SENDPULSE_CONFIG.secret) {
+      console.error('❌ SendPulse API credentials are not configured');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service is not configured. Please set SMTP_USER and SMTP_PASSWORD environment variables.' 
+        error: 'Email service is not configured. Please set SENDPULSE_API_USER_ID and SENDPULSE_API_SECRET environment variables.' 
       });
     }
 
     if (!FROM_EMAIL) {
-      console.error('❌ SMTP_FROM_EMAIL is not configured');
+      console.error('❌ SENDPULSE_FROM_EMAIL is not configured');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service is not configured. Please set SMTP_FROM_EMAIL environment variable.' 
+        error: 'Email service is not configured. Please set SENDPULSE_FROM_EMAIL environment variable.' 
       });
     }
 
@@ -300,35 +300,48 @@ app.post('/api/test-email', async (req, res) => {
     `;
     const testText = 'This is a test email from Voice Anchors. If you received this email, your email configuration is working correctly!';
 
-    // Create SMTP transporter
-    const transporter = createTransporter();
-    if (!transporter) {
-      return res.status(500).json({
-        success: false,
-        error: 'Email service is not available. Please check your SMTP configuration.'
-      });
+    // Initialize SendPulse if not already initialized
+    if (!sendpulseClient) {
+      try {
+        await initializeSendPulse();
+      } catch (error) {
+        return res.status(500).json({
+          success: false,
+          error: 'Email service is not available. Please check your SendPulse configuration.'
+        });
+      }
     }
 
     if (!FROM_EMAIL) {
       return res.status(500).json({
         success: false,
-        error: 'SMTP_FROM_EMAIL is not configured.'
+        error: 'SENDPULSE_FROM_EMAIL is not configured.'
       });
     }
 
     try {
-      const mailOptions = {
+      const emailData = {
+        html: testHtml,
+        text: testText,
+        subject: testSubject,
         from: {
           name: 'Voice Anchors',
-          address: FROM_EMAIL
+          email: FROM_EMAIL
         },
-        to: to,
-        subject: testSubject,
-        html: testHtml,
-        text: testText
+        to: [{
+          name: '',
+          email: to
+        }]
       };
 
-      const result = await transporter.sendMail(mailOptions);
+      await new Promise((resolve, reject) => {
+        sendpulseClient.smtpSendMail((data) => {
+          if (data && data.is_error) {
+            reject(new Error(data.message));
+            return;
+          }
+          resolve(data);
+        }, emailData);
 
       res.json({
         success: true,
@@ -362,18 +375,16 @@ app.listen(PORT, () => {
   console.log(`📧 Email test endpoint: http://localhost:${PORT}/api/test-email`);
   
   // Log email configuration status
-  const smtpUser = SMTP_CONFIG.auth.user;
-  const smtpPass = SMTP_CONFIG.auth.pass;
-  if (smtpUser && smtpPass && FROM_EMAIL) {
-    console.log(`✅ SMTP email service is configured`);
-    console.log(`   Host: ${SMTP_CONFIG.host}`);
-    console.log(`   Port: ${SMTP_CONFIG.port}`);
+  const userId = SENDPULSE_CONFIG.userId;
+  const secret = SENDPULSE_CONFIG.secret;
+  if (userId && secret && FROM_EMAIL) {
+    console.log(`✅ SendPulse API service is configured`);
     console.log(`   FROM_EMAIL: ${FROM_EMAIL}`);
   } else {
-    console.log(`⚠️  SMTP email service is NOT fully configured`);
-    if (!smtpUser) console.log(`   ❌ SMTP_USER is missing`);
-    if (!smtpPass) console.log(`   ❌ SMTP_PASSWORD is missing`);
-    if (!FROM_EMAIL) console.log(`   ❌ SMTP_FROM_EMAIL is missing`);
+    console.log(`⚠️  SendPulse API service is NOT fully configured`);
+    if (!userId) console.log(`   ❌ SENDPULSE_API_USER_ID is missing`);
+    if (!secret) console.log(`   ❌ SENDPULSE_API_SECRET is missing`);
+    if (!FROM_EMAIL) console.log(`   ❌ SENDPULSE_FROM_EMAIL is missing`);
   }
 });
 
