@@ -110,19 +110,18 @@ const SMTP_CONFIG = {
 };
 const FROM_EMAIL = process.env.SMTP_FROM_EMAIL;
 
-// Validate email configuration on startup
-if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
-    console.warn('⚠️  WARNING: SendPulse API credentials are not set!');
-    console.warn('   Email functionality will not work without valid credentials.');
+// Validate email configuration on startup (SMTP)
+if (!SMTP_CONFIG.auth.user || !SMTP_CONFIG.auth.pass) {
+  console.warn('⚠️  WARNING: SMTP credentials are not set! Email functionality may not work.');
 } else {
-    console.log('✅ SendPulse API credentials are configured');
+  console.log('✅ SMTP credentials are configured');
 }
 
 if (!FROM_EMAIL) {
-    console.warn('⚠️  WARNING: SENDPULSE_FROM_EMAIL environment variable is not set!');
-    console.warn('   Using default email address (may not work).');
+  console.warn('⚠️  WARNING: SMTP_FROM_EMAIL environment variable is not set!');
+  console.warn('   Using default email address (may not work).');
 } else {
-    console.log(`✅ SENDPULSE_FROM_EMAIL is configured: ${FROM_EMAIL}`);
+  console.log(`✅ SMTP_FROM_EMAIL is configured: ${FROM_EMAIL}`);
 }
 
 // Create transporter for sending emails
@@ -153,20 +152,20 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
-    // Validate email configuration
-    if (!RESEND_API_KEY) {
-      console.error('❌ RESEND_API_KEY is not configured');
+    // Validate email configuration (SMTP)
+    if (!SMTP_CONFIG.auth.user || !SMTP_CONFIG.auth.pass) {
+      console.error('❌ SMTP credentials (SMTP_USER/SMTP_PASSWORD) are not configured');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service is not configured. Please set RESEND_API_KEY environment variable.' 
+        error: 'Email service is not configured. Please set SMTP_USER and SMTP_PASSWORD environment variables.' 
       });
     }
 
     if (!FROM_EMAIL) {
-      console.error('❌ FROM_EMAIL is not configured');
+      console.error('❌ SMTP_FROM_EMAIL is not configured');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service is not configured. Please set FROM_EMAIL environment variable.' 
+        error: 'Email service is not configured. Please set SMTP_FROM_EMAIL environment variable.' 
       });
     }
 
@@ -214,36 +213,29 @@ app.post('/api/send-email', async (req, res) => {
       // Send email via SMTP
       const result = await transporter.sendMail(mailOptions);
 
-      console.log('✅ SendPulse email sent successfully:', result);
+      console.log(`✅ Email sent successfully to ${recipients.join(', ')} (${type || 'general'})`);
+      console.log('   Message ID:', result.messageId || result.response || 'N/A');
+
+      return res.json({
+        success: true,
+        id: result.messageId || result.response,
+        message: 'Email sent successfully',
+        to: recipients
+      });
     } catch (error) {
-      console.error('❌ SendPulse API error:', error);
-      
-      // Provide more helpful error messages
+      console.error('❌ SMTP send error:', error);
       let errorMessage = 'Failed to send email';
-      if (error.message) {
+      if (error && error.message) {
         errorMessage = error.message;
       } else if (typeof error === 'string') {
         errorMessage = error;
-      } else if (error.name) {
-        errorMessage = `${error.name}: ${error.message || 'Unknown error'}`;
       }
-      
-      return res.status(500).json({ 
-        success: false, 
+      return res.status(500).json({
+        success: false,
         error: errorMessage,
         details: process.env.NODE_ENV === 'development' ? error : undefined
       });
     }
-
-    console.log(`✅ Email sent successfully to ${recipients.join(', ')} (${type || 'general'})`);
-    console.log(`   Email ID: ${data?.id || 'N/A'}`);
-    
-    res.json({ 
-      success: true, 
-      id: data?.id,
-      message: 'Email sent successfully',
-      to: recipients
-    });
 
   } catch (error) {
     console.error('❌ Error sending email:', error);
@@ -342,20 +334,7 @@ app.post('/api/test-email', async (req, res) => {
       });
     }
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message || 'Failed to send test email',
-        details: error
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Test email sent successfully',
-      emailId: data?.id,
-      to: to
-    });
+    // response already sent inside try/catch above
 
   } catch (error) {
     console.error('Error sending test email:', error);
