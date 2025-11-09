@@ -94,48 +94,45 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================
-// SendPulse Email SMTP Configuration
+// SendPulse Email API Configuration
 // ============================================
-// Import nodemailer for SMTP email sending
-const nodemailer = require('nodemailer');
+const SendpulseApi = require('sendpulse-api');
 
-const SMTP_CONFIG = {
-  host: process.env.SMTP_HOST || 'smtp-pulse.net',
-  port: process.env.SMTP_PORT || 465,
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER || '7fd6ce78ffb534da678d14085e795631',
-    pass: process.env.SMTP_PASSWORD || 'ebc54ee9ce66598df879ae76de5067c1'
-  }
+const SENDPULSE_CONFIG = {
+  userId: process.env.SENDPULSE_API_USER_ID,
+  secret: process.env.SENDPULSE_API_SECRET,
 };
-const FROM_EMAIL = process.env.SMTP_FROM_EMAIL;
+const FROM_EMAIL = process.env.SENDPULSE_FROM_EMAIL;
 
-// Validate email configuration on startup (SMTP)
-if (!SMTP_CONFIG.auth.user || !SMTP_CONFIG.auth.pass) {
-  console.warn('⚠️  WARNING: SMTP credentials are not set! Email functionality may not work.');
+// Validate email configuration on startup
+if (!SENDPULSE_CONFIG.userId || !SENDPULSE_CONFIG.secret) {
+  console.warn('⚠️  WARNING: SendPulse API credentials are not set! Email functionality may not work.');
 } else {
-  console.log('✅ SMTP credentials are configured');
+  console.log('✅ SendPulse API credentials are configured');
 }
 
 if (!FROM_EMAIL) {
-  console.warn('⚠️  WARNING: SMTP_FROM_EMAIL environment variable is not set!');
+  console.warn('⚠️  WARNING: SENDPULSE_FROM_EMAIL environment variable is not set!');
   console.warn('   Using default email address (may not work).');
 } else {
-  console.log(`✅ SMTP_FROM_EMAIL is configured: ${FROM_EMAIL}`);
+  console.log(`✅ SendPulse FROM_EMAIL is configured: ${FROM_EMAIL}`);
 }
 
-// Create transporter for sending emails
-function createTransporter() {
-    try {
-        const transporter = nodemailer.createTransport(SMTP_CONFIG);
-        console.log('✅ SMTP transporter created successfully');
-        return transporter;
-    } catch (error) {
-        console.error('❌ Failed to create SMTP transporter:', error);
-        console.error('   Error details:', error.message);
-        console.error('   Stack:', error.stack);
-        return null;
-    }
+// Initialize SendPulse API client
+let sendpulseClient = null;
+function initializeSendPulse() {
+    return new Promise((resolve, reject) => {
+        SendpulseApi.init(SENDPULSE_CONFIG.userId, SENDPULSE_CONFIG.secret, 'cache/', (token) => {
+            if (token && token.is_error) {
+                console.error('❌ Failed to initialize SendPulse:', token.message);
+                reject(new Error(token.message));
+                return;
+            }
+            sendpulseClient = new SendpulseApi();
+            console.log('✅ SendPulse API initialized successfully');
+            resolve(sendpulseClient);
+        });
+    });
 }
 
 // Email sending endpoint
@@ -169,14 +166,17 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
-    // Create SMTP transporter
-    const transporter = createTransporter();
-    if (!transporter) {
-      console.error('❌ Failed to create SMTP transporter');
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Email service not available. Please check your SMTP configuration.' 
-      });
+    // Initialize SendPulse if not already initialized
+    if (!sendpulseClient) {
+      try {
+        await initializeSendPulse();
+      } catch (error) {
+        console.error('❌ Failed to initialize SendPulse:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Email service not available. Please check your SendPulse configuration.'
+        });
+      }
     }
 
     // Validate email address format
@@ -185,9 +185,9 @@ app.post('/api/send-email', async (req, res) => {
     for (const email of recipients) {
       if (!emailRegex.test(email)) {
         console.error(`❌ Invalid email address: ${email}`);
-        return res.status(400).json({ 
-          success: false, 
-          error: `Invalid email address: ${email}` 
+        return res.status(400).json({
+          success: false,
+          error: `Invalid email address: ${email}`
         });
       }
     }
@@ -197,28 +197,37 @@ app.post('/api/send-email', async (req, res) => {
     console.log(`   Subject: ${subject}`);
     console.log(`   Type: ${type || 'general'}`);
 
-    // Prepare email data
-    const mailOptions = {
+    // Prepare email data for SendPulse
+    const emailData = {
+      html: html || text || '',
+      text: text || html || '',
+      subject: subject,
       from: {
         name: 'Voice Anchors',
-        address: FROM_EMAIL
+        email: FROM_EMAIL
       },
-      to: recipients.join(', '),
-      subject: subject,
-      html: html || text || '',
-      text: text || html || ''
+      to: recipients.map(email => ({
+        name: '',
+        email: email
+      }))
     };
 
     try {
-      // Send email via SMTP
-      const result = await transporter.sendMail(mailOptions);
+      // Send email via SendPulse API
+      await new Promise((resolve, reject) => {
+        sendpulseClient.smtpSendMail((data) => {
+          if (data && data.is_error) {
+            reject(new Error(data.message));
+            return;
+          }
+          resolve(data);
+        }, emailData);
+      });
 
       console.log(`✅ Email sent successfully to ${recipients.join(', ')} (${type || 'general'})`);
-      console.log('   Message ID:', result.messageId || result.response || 'N/A');
 
       return res.json({
         success: true,
-        id: result.messageId || result.response,
         message: 'Email sent successfully',
         to: recipients
       });

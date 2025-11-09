@@ -18,16 +18,12 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false  # Set this manually in Render dashboard
       # SendPulse Email Configuration
-      - key: SMTP_HOST
-        value: smtp-pulse.net
-      - key: SMTP_PORT
-        value: 465
-      - key: SMTP_USER
-        value: 7fd6ce78ffb534da678d14085e795631  # Your SendPulse User ID
-      - key: SMTP_PASSWORD
-        value: ebc54ee9ce66598df879ae76de5067c1  # Your SendPulse Secret
-      - key: SMTP_FROM_EMAIL
-        value: hello@voiceanchors.publicvm.com # Your verified domain email
+      - key: SENDPULSE_API_USER_ID
+        sync: false  # Set your SendPulse API User ID in Render dashboard
+      - key: SENDPULSE_API_SECRET
+        sync: false  # Set your SendPulse API Secret in Render dashboard
+      - key: SENDPULSE_FROM_EMAIL
+        value: hello@voiceanchors.publicvm.com # Your verified sender email
 
 
 

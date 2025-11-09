@@ -13,7 +13,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "dotenv": "^16.3.1",
-    "nodemailer": "^6.9.7",
+    "sendpulse-api": "^1.1.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
