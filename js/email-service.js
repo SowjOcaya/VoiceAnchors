@@ -1,10 +1,10 @@
-// Email Service - Using Resend.dev
+// Email Service - Using SendPulse
 // All emails are sent via server endpoint to keep API key secure
 
 const EMAIL_CONFIG = {
     apiEndpoint: '/api/send-email',
     fromName: 'Voice Anchors',
-    fromEmail: 'voice-anchors@resend.dev' // This will be set by server
+    fromEmail: 'hello@voiceanchors.publicvm.com' // Verified SendPulse domain
 };
 
 // Check if email service is available
@@ -12,7 +12,7 @@ function isEmailServiceAvailable() {
     return typeof fetch !== 'undefined';
 }
 
-// Send email via Resend API (through server endpoint)
+// Send email via SendPulse API (through server endpoint)
 async function sendEmail(to, subject, html, text, type = 'general') {
     if (!isEmailServiceAvailable()) {
         console.warn('📧 Email service not available (fetch not supported)');

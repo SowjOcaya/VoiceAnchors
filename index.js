@@ -94,75 +94,51 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================
-// Resend Email API Endpoint
+// SendPulse Email API Endpoint
 // ============================================
-// Import Resend - Handle Resend v3.2.0 import
-let ResendClass;
-try {
-    // Try named export first (most common in v3)
-    const resendModule = require('resend');
-    
-    // Check what we got
-    if (resendModule.Resend && typeof resendModule.Resend === 'function') {
-        ResendClass = resendModule.Resend;
-    } else if (typeof resendModule === 'function') {
-        // Module itself is the class
-        ResendClass = resendModule;
-    } else if (resendModule.default && typeof resendModule.default === 'function') {
-        // Default export
-        ResendClass = resendModule.default;
-    } else {
-        throw new Error('Resend constructor not found. Module structure: ' + JSON.stringify(Object.keys(resendModule || {})));
-    }
-} catch (error) {
-    console.error('❌ Failed to import Resend module:', error.message);
-    // Don't throw - let the getResend function handle it
-}
+// Import SendPulse SMTP API
+const SendPulse = require('@sendpulse/smtp-api-v1');
 
-let resend;
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL;
+let sendpulse;
+const SENDPULSE_API_ID = process.env.SENDPULSE_API_ID || '7fd6ce78ffb534da678d14085e795631';
+const SENDPULSE_API_SECRET = process.env.SENDPULSE_API_SECRET || 'ebc54ee9ce66598df879ae76de5067c1';
+const FROM_EMAIL = process.env.SENDPULSE_FROM_EMAIL;
 
 // Validate email configuration on startup
-if (!RESEND_API_KEY) {
-    console.warn('⚠️  WARNING: RESEND_API_KEY environment variable is not set!');
-    console.warn('   Email functionality will not work without a valid API key.');
+if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
+    console.warn('⚠️  WARNING: SendPulse API credentials are not set!');
+    console.warn('   Email functionality will not work without valid credentials.');
 } else {
-    console.log('✅ RESEND_API_KEY is configured');
+    console.log('✅ SendPulse API credentials are configured');
 }
 
 if (!FROM_EMAIL) {
-    console.warn('⚠️  WARNING: FROM_EMAIL environment variable is not set!');
+    console.warn('⚠️  WARNING: SENDPULSE_FROM_EMAIL environment variable is not set!');
     console.warn('   Using default email address (may not work).');
 } else {
-    console.log(`✅ FROM_EMAIL is configured: ${FROM_EMAIL}`);
+    console.log(`✅ SENDPULSE_FROM_EMAIL is configured: ${FROM_EMAIL}`);
 }
 
-// Initialize Resend only when needed
-function getResend() {
-    if (!RESEND_API_KEY) {
-        console.error('❌ RESEND_API_KEY is not set. Cannot initialize Resend.');
+// Initialize SendPulse only when needed
+function getSendPulse() {
+    if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
+        console.error('❌ SendPulse API credentials are not set. Cannot initialize SendPulse.');
         return null;
     }
     
-    if (!ResendClass) {
-        console.error('❌ Resend class could not be loaded. Check if resend package is installed.');
-        return null;
-    }
-    
-    if (!resend) {
+    if (!sendpulse) {
         try {
-            // Initialize Resend instance with API key
-            resend = new ResendClass(RESEND_API_KEY);
-            console.log('✅ Resend initialized successfully');
+            // Initialize SendPulse instance with API credentials
+            sendpulse = new SendPulse(SENDPULSE_API_ID, SENDPULSE_API_SECRET);
+            console.log('✅ SendPulse initialized successfully');
         } catch (error) {
-            console.error('❌ Failed to initialize Resend:', error);
+            console.error('❌ Failed to initialize SendPulse:', error);
             console.error('   Error details:', error.message);
             console.error('   Stack:', error.stack);
             return null;
         }
     }
-    return resend;
+    return sendpulse;
 }
 
 // Email sending endpoint
@@ -196,13 +172,13 @@ app.post('/api/send-email', async (req, res) => {
       });
     }
 
-    // Get Resend instance
-    const resendInstance = getResend();
-    if (!resendInstance) {
-      console.error('❌ Failed to get Resend instance');
+    // Get SendPulse instance
+    const sendpulseInstance = getSendPulse();
+    if (!sendpulseInstance) {
+      console.error('❌ Failed to get SendPulse instance');
       return res.status(500).json({ 
         success: false, 
-        error: 'Email service not available. Please check your RESEND_API_KEY configuration.' 
+        error: 'Email service not available. Please check your SendPulse API configuration.' 
       });
     }
 
@@ -224,18 +200,32 @@ app.post('/api/send-email', async (req, res) => {
     console.log(`   Subject: ${subject}`);
     console.log(`   Type: ${type || 'general'}`);
 
-    // Send email via Resend
-    const { data, error } = await resendInstance.emails.send({
-      from: FROM_EMAIL,
-      to: recipients,
+    // Send email via SendPulse
+    const emailData = {
+      from: {
+        name: 'Voice Anchors',
+        email: FROM_EMAIL
+      },
+      to: recipients.map(email => ({ email })),
       subject: subject,
       html: html || text || '',
       text: text || html || ''
-    });
+    };
 
-    if (error) {
-      console.error('❌ Resend API error:', JSON.stringify(error, null, 2));
-      console.error('   Error details:', error);
+    try {
+      const result = await new Promise((resolve, reject) => {
+        sendpulseInstance.smtp.emails.send(emailData, (data, error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(data);
+          }
+        });
+      });
+
+      console.log('✅ SendPulse email sent successfully:', result);
+    } catch (error) {
+      console.error('❌ SendPulse API error:', error);
       
       // Provide more helpful error messages
       let errorMessage = 'Failed to send email';
@@ -319,28 +309,55 @@ app.post('/api/test-email', async (req, res) => {
     const testText = 'This is a test email from Voice Anchors. If you received this email, your email configuration is working correctly!';
 
     // Use the same email sending logic
-    const resendInstance = getResend();
-    if (!resendInstance) {
+    const sendpulseInstance = getSendPulse();
+    if (!sendpulseInstance) {
       return res.status(500).json({
         success: false,
-        error: 'Email service is not available. Please check your RESEND_API_KEY configuration.'
+        error: 'Email service is not available. Please check your SendPulse API configuration.'
       });
     }
 
     if (!FROM_EMAIL) {
       return res.status(500).json({
         success: false,
-        error: 'FROM_EMAIL is not configured.'
+        error: 'SENDPULSE_FROM_EMAIL is not configured.'
       });
     }
 
-    const { data, error } = await resendInstance.emails.send({
-      from: FROM_EMAIL,
-      to: to,
-      subject: testSubject,
-      html: testHtml,
-      text: testText
-    });
+    try {
+      const emailData = {
+        from: {
+          name: 'Voice Anchors',
+          email: FROM_EMAIL
+        },
+        to: [{ email: to }],
+        subject: testSubject,
+        html: testHtml,
+        text: testText
+      };
+
+      const result = await new Promise((resolve, reject) => {
+        sendpulseInstance.smtp.emails.send(emailData, (data, error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(data);
+          }
+        });
+      });
+
+      res.json({
+        success: true,
+        message: 'Test email sent successfully',
+        to: to
+      });
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
+      });
+    }
 
     if (error) {
       return res.status(500).json({
@@ -374,13 +391,14 @@ app.listen(PORT, () => {
   console.log(`📧 Email test endpoint: http://localhost:${PORT}/api/test-email`);
   
   // Log email configuration status
-  if (RESEND_API_KEY && FROM_EMAIL) {
-    console.log(`✅ Email service is configured`);
+  if (SENDPULSE_API_ID && SENDPULSE_API_SECRET && FROM_EMAIL) {
+    console.log(`✅ SendPulse email service is configured`);
     console.log(`   FROM_EMAIL: ${FROM_EMAIL}`);
   } else {
-    console.log(`⚠️  Email service is NOT fully configured`);
-    if (!RESEND_API_KEY) console.log(`   ❌ RESEND_API_KEY is missing`);
-    if (!FROM_EMAIL) console.log(`   ❌ FROM_EMAIL is missing`);
+    console.log(`⚠️  SendPulse email service is NOT fully configured`);
+    if (!SENDPULSE_API_ID) console.log(`   ❌ SENDPULSE_API_ID is missing`);
+    if (!SENDPULSE_API_SECRET) console.log(`   ❌ SENDPULSE_API_SECRET is missing`);
+    if (!FROM_EMAIL) console.log(`   ❌ SENDPULSE_FROM_EMAIL is missing`);
   }
 });
 
