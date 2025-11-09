@@ -21,7 +21,8 @@ services:
       - key: RESEND_API_KEY
         value: re_VnYhuscq_Lz9AaSYaWgAEivaXkV9bGG2e
       - key: FROM_EMAIL
-        value: voiceanchors@resend.com # Change to your verified domain email
+        value: noreply@voice.result.com # Update after domain verification is complete
+        # For testing while domain is pending, use: onboarding@resend.dev
 
 
 
